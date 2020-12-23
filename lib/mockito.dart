@@ -14,6 +14,7 @@
 
 // ignore: deprecated_member_use
 export 'package:test_api/fake.dart' show Fake;
+export 'src/unusable.dart' show Unusable;
 
 export 'src/mock.dart'
     show

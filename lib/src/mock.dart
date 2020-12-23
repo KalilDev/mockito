@@ -60,6 +60,29 @@ void throwOnMissingStub(
       ([_]) => CallPair<dynamic>.allInvocations(exceptionBuilder!);
 }
 
+/// Opt-into [Mock] returning the Fake value for unimplemented methods.
+///
+/// Will optionally throw on unimplemented methods that return an primitive
+/// value.
+///
+/// The default behavior when not using this is to always return `null`.
+void returnFakeOnMissingStub(
+  Mock mock, {
+  void Function(Invocation)? primitiveExceptionBuilder,
+  bool throwOnMissingPrimitiveStub = true,
+}) {
+  primitiveExceptionBuilder ??= mock._noSuchMethod;
+
+  mock._defaultResponse = ([v]) => CallPair<dynamic>.allInvocations((i) => v);
+  if (throwOnMissingPrimitiveStub) {
+    mock._defaultPrimitiveResponse =
+        ([_]) => CallPair<dynamic>.allInvocations(primitiveExceptionBuilder!);
+  } else {
+    mock._defaultPrimitiveResponse =
+        ([v]) => CallPair<dynamic>.allInvocations((i) => v);
+  }
+}
+
 /// Extend or mixin this class to mark the implementation as a [Mock].
 ///
 /// A mocked class implements all fields and methods with a default

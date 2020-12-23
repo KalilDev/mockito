@@ -44,6 +44,7 @@ export 'src/mock.dart'
 
         // -- misc
         throwOnMissingStub,
+        returnFakeOnMissingStub,
         clearInteractions,
         reset,
         resetMockitoState,

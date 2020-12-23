@@ -71,8 +71,22 @@ class GenerateMocks {
 class MockSpec<T> {
   final Symbol? mockName;
 
+  final bool stubObjectProperties;
+  final bool throwOnMissingStub;
   final bool returnNullOnMissingStub;
+  final bool returnFakeOnMissingStub;
 
-  const MockSpec({Symbol? as, this.returnNullOnMissingStub = false})
-      : mockName = as;
+  const MockSpec({
+    Symbol? as,
+    this.stubObjectProperties = false,
+    this.throwOnMissingStub = false,
+    this.returnNullOnMissingStub = false,
+    this.returnFakeOnMissingStub = true,
+  })  : mockName = as,
+        assert(throwOnMissingStub ^
+            returnNullOnMissingStub ^
+            returnFakeOnMissingStub),
+        assert(!throwOnMissingStub ||
+            !returnNullOnMissingStub ||
+            !returnFakeOnMissingStub);
 }

@@ -42,7 +42,8 @@ final Map<String, ArgMatcher> _storedNamedArgs = <String, ArgMatcher>{};
     'Mockito 5.0.0')
 void setDefaultResponse(
     Mock mock, CallPair<dynamic> Function() defaultResponse) {
-  mock._defaultResponse = defaultResponse;
+  mock._defaultResponse = ([_]) => defaultResponse();
+  mock._defaultPrimitiveResponse = ([_]) => defaultResponse();
 }
 
 /// Opt-into [Mock] throwing [NoSuchMethodError] for unimplemented methods.
@@ -54,7 +55,9 @@ void throwOnMissingStub(
 }) {
   exceptionBuilder ??= mock._noSuchMethod;
   mock._defaultResponse =
-      () => CallPair<dynamic>.allInvocations(exceptionBuilder!);
+      ([_]) => CallPair<dynamic>.allInvocations(exceptionBuilder!);
+  mock._defaultPrimitiveResponse =
+      ([_]) => CallPair<dynamic>.allInvocations(exceptionBuilder!);
 }
 
 /// Extend or mixin this class to mark the implementation as a [Mock].
@@ -107,7 +110,8 @@ class Mock {
   String? _givenName;
   int? _givenHashCode;
 
-  _ReturnsCannedResponse _defaultResponse = () => _nullResponse;
+  _ReturnsCannedResponse _defaultResponse = ([_]) => _nullResponse;
+  _ReturnsCannedResponse _defaultPrimitiveResponse = ([_]) => _nullResponse;
 
   void _setExpected(CallPair<dynamic> cannedResponse) {
     _responses.add(cannedResponse);
@@ -121,7 +125,11 @@ class Mock {
   /// return type.
   @override
   @visibleForTesting
-  dynamic noSuchMethod(Invocation invocation, [Object? returnValue]) {
+  dynamic noSuchMethod(
+    Invocation invocation, [
+    Object? returnValue,
+    bool isPrimitive = false,
+  ]) {
     // noSuchMethod is that 'magic' that allows us to ignore implementing fields
     // and methods and instead define them later at compile-time per instance.
     invocation = _useMatchedInvocationIfSet(invocation);
@@ -138,8 +146,11 @@ class Mock {
       _realCalls.add(RealCall(this, invocation));
       _invocationStreamController.add(invocation);
       var cannedResponse = _responses.lastWhere(
-          (cr) => cr.call.matches(invocation, {}),
-          orElse: _defaultResponse);
+        (cr) => cr.call.matches(invocation, {}),
+        orElse: () => isPrimitive
+            ? _defaultPrimitiveResponse(returnValue)
+            : _defaultResponse(returnValue),
+      );
       var response = cannedResponse.response(invocation);
       return response;
     }
@@ -176,7 +187,8 @@ class Mock {
       _realCallsToString(_realCalls.where((call) => !call.verified));
 }
 
-typedef _ReturnsCannedResponse = CallPair<dynamic> Function();
+typedef _ReturnsCannedResponse = CallPair<dynamic> Function(
+    [Object? returnValue]);
 
 // When using an [ArgMatcher], we transform our invocation to have knowledge of
 // which arguments are wrapped, and which ones are not. Otherwise we just use
